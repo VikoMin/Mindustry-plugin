@@ -100,6 +100,7 @@ public class CommandsManager {
 		adminCommands.add("sandbox");
 		adminCommands.add("unit");
 		adminCommands.add("bans");
+		adminCommands.add("bans");
 		adminCommands.add("unban");
 		adminCommands.add("m");
 		adminCommands.add("js");
@@ -872,6 +873,21 @@ public class CommandsManager {
 					}else{
 						player.sendMessage("[red]That IP/ID is not banned!");
 					}
+				}
+			}
+		});
+
+		handler.<Player>register("ban", "<ID>", "ban a person by ID.", (arg, player) -> {
+			if(player.admin()) {
+				if(arg[0].size == 24) {
+					
+					if(netServer.admins.banPlayerID(arg[0])){
+						player.sendMessage("[gold]banned player: [white]" + arg[0]);
+					}else{
+						player.sendMessage("[red]That ID is already banned!");
+					}
+				}else{
+					player.sendMessage("[red]This is not ID!");
 				}
 			}
 		});
