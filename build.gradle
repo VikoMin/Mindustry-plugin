@@ -20,10 +20,14 @@ ext{
 }
 
 dependencies{
-    compileOnly "com.github.Anuken.Arc:arc-core:$mindustryVersion"
-    compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
+    compileOnly("com.github.anuken.arc:arc-core:$mindustryVersion")
+    compileOnly("com.github.anuken.mindustry:core:$mindustryVersion") {
+        exclude group: "com.github.Anuken.Arc"
+    }
+    compileOnly("com.github.anuken.mindustry:server:$mindustryVersion") {
+        exclude group: "com.github.Anuken.Arc"
+    }
 }
-
 jar{
     archiveFileName = "${project.archivesBaseName}.jar"
     from{
