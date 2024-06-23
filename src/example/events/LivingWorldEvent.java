@@ -1,5 +1,12 @@
 package example.events;
 
+import static mindustry.Vars.*;
+
+import java.awt.Point;
+import java.util.ArrayList;
+import java.util.Random;
+
+import arc.util.Log;
 import mindustry.content.Blocks;
 import mindustry.game.EventType.PlayerJoin;
 import mindustry.game.EventType.TapEvent;
@@ -8,15 +15,9 @@ import mindustry.gen.Call;
 import mindustry.world.Block;
 import mindustry.world.Tile;
 
-import java.awt.Point;
-import java.util.ArrayList;
-import java.util.Random;
-
-import arc.util.Log;
-
-import static mindustry.Vars.*;
-
 public class LivingWorldEvent extends ServerEvent {
+
+	private long tapLimit = 0;
 
 	public LivingWorldEvent() {
 		super("living_world"); // living_world
@@ -31,7 +32,7 @@ public class LivingWorldEvent extends ServerEvent {
 	@Override
 	public void announce() {
 		Call.announce("[lime]Событие \"Живая руда\" начнется на следующей карте!");
-		Call.sendMessage("[lime]Событие \"Живая руда\" начнется на следующей карте!");	
+		Call.sendMessage("[lime]Событие \"Живая руда\" начнется на следующей карте!");
 	}
 
 	@Override
@@ -42,21 +43,23 @@ public class LivingWorldEvent extends ServerEvent {
 	
 	@Override
 	public void tap(TapEvent e) {
-		Log.info(e.tile);
-		if(e.tile == null) return;
-		if(e.tile.overlay() == null) return;
-		if(e.tile.overlay() == Blocks.air) return;
-		Log.info(e.tile.overlay());
-		
-		for (int i = 0; i < oreTiles.size(); i++) {
-			Point p = oreTiles.get(i);
-			if(p.x == e.tile.centerX() && p.y == e.tile.centerY()) {
-				moveOre(i);
-				break;
+		if(tapLimit <= System.currentTimeMillis() - 50){
+			Log.info(e.tile);
+			if(e.tile == null) return;
+			if(e.tile.overlay() == null) return;
+			if(e.tile.overlay() == Blocks.air) return;
+			Log.info(e.tile.overlay());
+			
+			for (int i = 0; i < oreTiles.size(); i++) {
+				Point p = oreTiles.get(i);
+				if(p.x == e.tile.centerX() && p.y == e.tile.centerY()) {
+					moveOre(i);
+					tapLimit = System.currentTimeMillis();
+					break;
+				}
 			}
 		}
 	}
-	
 	int updates = 0;
 	
 	@Override
@@ -206,6 +209,7 @@ public class LivingWorldEvent extends ServerEvent {
 	
 	@Override
 	public void generateWorld() {
+		if(!isGenerated){
 		updates = 0;
 		oreTiles = new ArrayList<>();
 		random = new Random();
@@ -235,5 +239,7 @@ public class LivingWorldEvent extends ServerEvent {
 			}
 		}
 		Call.sendMessage("[lime]Руда теперь убегает, окружайте ее блоками, чтобы не дать уйти");
+		isGenerated = true;
 	}
+}
 }

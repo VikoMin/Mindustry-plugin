@@ -80,7 +80,7 @@ public class DataCollecter {
 			playerData[i][3] = player.ip();
 			
 		}
-		//		
+		//
 		
 		try {
 			int hours = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);

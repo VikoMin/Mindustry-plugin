@@ -1,7 +1,5 @@
 package example.achievements;
 
-import java.util.HexFormat;
-
 import arc.Core;
 import arc.Events;
 import arc.files.Fi;
@@ -10,11 +8,9 @@ import arc.util.Log;
 import arc.util.serialization.Json;
 import mindustry.content.Blocks;
 import mindustry.game.EventType.UnitCreateEvent;
-import mindustry.game.EventType.UnitSpawnEvent;
 import mindustry.game.EventType.WorldLoadEndEvent;
 import mindustry.gen.Groups;
 import mindustry.gen.Player;
-import mindustry.maps.Maps.ShuffleMode;
 
 public class AchievementsManager {
 	
@@ -68,7 +64,7 @@ public class AchievementsManager {
 		}
 		
 		public String getGlyphId() {
-			return HexFormat.of().formatHex(glyph.getBytes());
+			return null;
 		}
 	}
 	

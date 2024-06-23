@@ -1,73 +1,39 @@
 package example.events;
 
-import mindustry.Vars;
+import static mindustry.Vars.*;
+
+import java.util.ArrayList;
+
+import arc.graphics.Color;
+import arc.math.Mathf;
+import arc.math.geom.Vec2;
+import arc.util.Log;
+import example.GameWork;
 import mindustry.content.Blocks;
 import mindustry.content.Fx;
 import mindustry.content.Items;
 import mindustry.content.Liquids;
 import mindustry.content.UnitTypes;
-import mindustry.content.Weathers;
-import mindustry.core.UI;
-import mindustry.core.World;
-import mindustry.entities.Effect;
-import mindustry.entities.abilities.Ability;
-import mindustry.entities.abilities.RegenAbility;
 import mindustry.game.EventType.BlockBuildEndEvent;
-import mindustry.game.EventType.DepositEvent;
 import mindustry.game.EventType.PlayerJoin;
-import mindustry.game.EventType.TapEvent;
-import mindustry.game.EventType.UnitCreateEvent;
 import mindustry.game.EventType.UnitDestroyEvent;
 import mindustry.game.EventType.WithdrawEvent;
-import mindustry.game.GameStats;
 import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.gen.Call;
-import mindustry.gen.Entityc;
 import mindustry.gen.Groups;
 import mindustry.gen.Player;
 import mindustry.gen.Unit;
-import mindustry.gen.WeatherState;
-import mindustry.gen.WeatherStatec;
-import mindustry.graphics.Drawf;
-import mindustry.type.Item;
-import mindustry.type.Liquid;
 import mindustry.type.UnitType;
-import mindustry.type.Weather;
 import mindustry.world.Block;
 import mindustry.world.Tile;
 import mindustry.world.blocks.defense.turrets.LiquidTurret;
-import mindustry.world.blocks.environment.Floor;
-import mindustry.world.blocks.environment.OreBlock;
-import mindustry.world.blocks.production.Drill;
 import mindustry.world.blocks.storage.CoreBlock.CoreBuild;
-import mindustry.world.consumers.Consume;
-import mindustry.world.consumers.ConsumeLiquid;
 import mindustry.world.modules.LiquidModule;
-import mindustry.world.modules.LiquidModule.LiquidConsumer;
-
-import static mindustry.Vars.*;
-
-import java.awt.Point;
-import java.nio.FloatBuffer;
-import java.util.ArrayList;
-import java.util.Iterator;
-
-import arc.Events;
-import arc.graphics.Color;
-import arc.math.Mat;
-import arc.math.Mathf;
-import arc.math.Rand;
-import arc.math.geom.Point2;
-import arc.math.geom.Position;
-import arc.math.geom.Vec2;
-import arc.util.Log;
-import arc.util.io.Reads;
-import arc.util.io.Writes;
-import example.GameWork;
 
 public class SpaceDangerEvent extends ServerEvent {
 
+	private long lastSended = 0;
 
 	public SpaceDangerEvent() {
 		super("Space danger");
@@ -92,6 +58,7 @@ public class SpaceDangerEvent extends ServerEvent {
 
 	@Override
 	public void playerJoin(PlayerJoin e) {
+		Log.info(e.player);
 		if(e.player == null) return;
 		e.player.sendMessage(info);
 	}
@@ -165,6 +132,7 @@ public class SpaceDangerEvent extends ServerEvent {
 
 		for (int i = 0; i < targets.size(); i++) {
 			targets.get(i).update();
+			targets.get(i).timer();
 		}
 
 		for (int i = 0; i < targets.size(); i++) {
@@ -177,6 +145,7 @@ public class SpaceDangerEvent extends ServerEvent {
 
 	@Override
 	public void generateWorld() {
+		if(!isGenerated){
 		meteorits = 0;
 		targets.clear();
 		dormantCystDropUnits.clear();
@@ -187,6 +156,8 @@ public class SpaceDangerEvent extends ServerEvent {
 		targetFissileMatterCounter = 0;
 		hudLerpT = 0;
 		isLablePlaced = false;
+		isGenerated = true;
+		}
 	}
 
 	@Override
@@ -327,7 +298,9 @@ public class SpaceDangerEvent extends ServerEvent {
 		private boolean needRemove = false;
 
 		private boolean isEnded = false;
-		private int fallTime, startFallTime;
+		private int fallTime = 90;
+		private int startFallTime = fallTime;
+		private long start = 0;
 
 		public Target(int x, int y) {
 			for (int i = 0; i < targets.size(); i++) {
@@ -348,7 +321,6 @@ public class SpaceDangerEvent extends ServerEvent {
 				y = world.tile(x, y).centerY();
 			}
 			
-			startFallTime = fallTime = (int) (Math.random()*60+60)*60;
 		}
 
 		public void effect(int i) {
@@ -359,17 +331,26 @@ public class SpaceDangerEvent extends ServerEvent {
 			Call.effect(Fx.chainLightning, x*tilesize, y*tilesize, 1, Color.red, new Vec2((x+dx)*tilesize, (y+dy)*tilesize));
 			Call.effect(Fx.chainLightning, x*tilesize, y*tilesize, 1, Color.blue, new Vec2((x-dx)*tilesize, (y+dy)*tilesize));
 		}
-
+		private void timer(){
+			if(isEnded) return;
+			if(hasTarget(x, y)) {
+				if(getTsunamiPower(x+3, y) > .5 && getTsunamiPower(x-3, y) > .5
+						&& getTsunamiPower(x, y+3) > .5 && getTsunamiPower(x, y-3) > .5) {
+				if(lastSended <= (System.currentTimeMillis() - 1000)){
+					if(start == 0){start = System.currentTimeMillis();}
+					long realSec = (start - System.currentTimeMillis() + 90000)/1000;
+					long min = realSec/60;
+					long sec = realSec - min*60;
+					Call.infoToast("Метеорит упадет через [gold]" + (min < 10 ? "0" + min : min) + ":" + (sec < 10 ? "0" + sec : sec), 1.1f);
+					fallTime--;
+					lastSended = System.currentTimeMillis();
+					}
+				} else {start = 0;}
+			} else {start = 0;}
+		}
 		private void update() {
 			if(isEnded) return;
-			
-			if((fallTime%(30*60) == 0 || fallTime == 15*60) && fallTime > 0) {
-				int sec = fallTime/60;
-				int min = sec/60;
-				sec -= min*60;
-				GameWork.warningToast("Метеорит упадет через " + (min > 0 ? "[gold]" + min + ":" : "[red]") + (sec == 0 ? "00" : sec));
-			}
-			if(fallTime < 0) {
+			if(fallTime <= 0) {
 				fall();
 				return;
 			}
@@ -377,10 +358,7 @@ public class SpaceDangerEvent extends ServerEvent {
 			if(hasTarget(x, y)) {
 				if(getTsunamiPower(x+3, y) > .5 && getTsunamiPower(x-3, y) > .5
 						&& getTsunamiPower(x, y+3) > .5 && getTsunamiPower(x, y-3) > .5) {
-					if(fallTime == startFallTime-1) {
 						GameWork.warningToast("[red]Метеорит приближается!");
-					}
-					fallTime--;
 				}
 			} else if(!isEnded) {
 				GameWork.warningToast("[red]Метеорит пролетел мимо!");
@@ -550,7 +528,7 @@ public class SpaceDangerEvent extends ServerEvent {
 //			}
 
 			meteorits++;
-			isEnded = true;			
+			isEnded = true;
 		}
 
 		private LiquidTurret getTsunami(int x, int y) {
@@ -599,19 +577,20 @@ public class SpaceDangerEvent extends ServerEvent {
 
 
 	// /event space_danger faston
-
+private long lastWithdraw = 0;
 	@Override
 	public void withdraw(WithdrawEvent e) {
 		if(e.player == null) return;
 		Unit unit = e.player.unit();
 		if(unit == null) return;
-
+		if(lastWithdraw <= System.currentTimeMillis() - 100){
 		if(e.item == Items.fissileMatter) {
 			UnitType unitType = unit.type();
-			if(unitType == UnitTypes.alpha || unitType == UnitTypes.beta || unitType == UnitTypes.gamma) {
+			if(unitType == UnitTypes.alpha || unitType == UnitTypes.beta || unitType == UnitTypes.gamma || unitType == UnitTypes.evoke || unitType == UnitTypes.incite || unitType == UnitTypes.emanate ) {
 				e.player.sendMessage("[gold]Вселитесь в юнита и возмите им этот предмет, чтобы улучшить его");
 				addDormantCystToCore(e.amount);
 				unit.clearItem();
+				lastWithdraw = System.currentTimeMillis();
 				return;
 			}
 			for (int i = 0; i < replaseBase.length; i++) {
@@ -626,10 +605,12 @@ public class SpaceDangerEvent extends ServerEvent {
 						addDormantCystToCore(e.amount-cost1);
 						unit.clearItem();
 						Call.sendMessage("[gold]Игрок " + e.player.coloredName() + " [gold]потратил [lightgray]" + cost1 + " [gold]нестабильной материи");
+						lastWithdraw = System.currentTimeMillis();
 					} else {
 						e.player.sendMessage("[gold]Недостаточно предметов, требуется " + cost1);
 						addDormantCystToCore(e.amount);
 						unit.clearItem();
+						lastWithdraw = System.currentTimeMillis();
 					}
 					return;
 				}
@@ -641,14 +622,18 @@ public class SpaceDangerEvent extends ServerEvent {
 					addDormantCystToCore(e.amount-cost2);
 					unit.clearItem();
 					Call.sendMessage("[gold]Игрок " + e.player.coloredName() + " [gold] вернул [lightgray]" + -cost2 + " [gold]дремлющих оболочек");
+					lastWithdraw = System.currentTimeMillis();
 					return;
 				}
 			}
 			e.player.sendMessage("[gold]Этот юнит не реагирует с данным предметом");
 			addDormantCystToCore(e.amount);
 			unit.clearItem();
+			lastWithdraw = System.currentTimeMillis();
+			return;
 		}
 	}
+}
 
 	@Override
 	public void trigger(Player player, String... args) {
@@ -660,6 +645,7 @@ public class SpaceDangerEvent extends ServerEvent {
 			Target target = new Target(x, y);
 			target.fallTime = -1;
 			target.update();
+			target.timer();
 		}
 	}
 

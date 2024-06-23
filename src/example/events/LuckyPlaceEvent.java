@@ -2,14 +2,9 @@ package example.events;
 
 import static mindustry.Vars.*;
 
-import java.util.ArrayList;
-
-import arc.Core;
 import arc.graphics.Color;
 import arc.math.Mathf;
 import arc.math.geom.Point2;
-import arc.math.geom.Rect;
-import arc.math.geom.Vec2;
 import arc.struct.Seq;
 import arc.util.Log;
 import example.Emoji;
@@ -19,30 +14,20 @@ import mindustry.Vars;
 import mindustry.content.Blocks;
 import mindustry.content.Fx;
 import mindustry.content.Items;
-import mindustry.content.Planets;
 import mindustry.content.StatusEffects;
 import mindustry.content.UnitTypes;
-import mindustry.entities.Damage;
-import mindustry.entities.abilities.ArmorPlateAbility;
-import mindustry.entities.abilities.EnergyFieldAbility;
-import mindustry.entities.abilities.ForceFieldAbility;
-import mindustry.entities.abilities.ShieldArcAbility;
-import mindustry.entities.abilities.SpawnDeathAbility;
-import mindustry.game.Team;
 import mindustry.game.EventType.BlockBuildEndEvent;
 import mindustry.game.EventType.DepositEvent;
 import mindustry.game.EventType.PlayerJoin;
+import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.gen.Call;
 import mindustry.gen.Groups;
 import mindustry.gen.Player;
 import mindustry.gen.Unit;
 import mindustry.type.Item;
-import mindustry.type.StatusEffect;
 import mindustry.world.Block;
-import mindustry.world.Build;
 import mindustry.world.Tile;
-import mindustry.world.blocks.environment.Floor;
 import mindustry.world.blocks.storage.CoreBlock.CoreBuild;
 import mindustry.world.modules.ItemModule;
 
@@ -111,7 +96,7 @@ public class LuckyPlaceEvent extends ServerEvent {
 //			new Point2(-1, 0),
 //			new Point2(0, +1),
 //			new Point2(0, -1),
-//			
+//
 //			new Point2(+1, +1),
 //			new Point2(-1, +1),
 //			new Point2(+1, -1),
@@ -272,13 +257,17 @@ public class LuckyPlaceEvent extends ServerEvent {
 		} else {
 			if(isLuckActivated) {
 				updateMiniEvent();
+				int x = luckySource.x;
+				int y = luckySource.y;
+				if(world.tile(x, y).block() != Blocks.container){
+					createSpaceAround();
+					world.tile(x, y).setNet(Blocks.container, Team.sharded, 0);
+				}
 				if(updates%60 == 0) {
-					int x = luckySource.x;
-					int y = luckySource.y;
 					if(world.tile(x, y).block() == Blocks.container) {
 						updateContainer();
 					} else {
-						Call.effect(Fx.generate, 
+						Call.effect(Fx.generate,
 								(float)(x*tilesize + tilesize/2f), (float)(y*tilesize + tilesize/2), 4f * 8f,
 								Color.HSVtoRGB((updates/60*10f)%360, 25, 100));
 						
@@ -338,7 +327,7 @@ public class LuckyPlaceEvent extends ServerEvent {
 			world.tile(xx+1, yy).setNet(Blocks.air);
 			world.tile(xx, yy+1).setNet(Blocks.air);
 			world.tile(xx+1, yy+1).setNet(Blocks.air);
-		}		
+		}
 	}
 
 	private void createSpaceAround() {
@@ -349,7 +338,11 @@ public class LuckyPlaceEvent extends ServerEvent {
 			world.tile(xx+1, yy).setFloorNet(Blocks.space);
 			world.tile(xx, yy+1).setFloorNet(Blocks.space);
 			world.tile(xx+1, yy+1).setFloorNet(Blocks.space);
-		}		
+			world.tile(luckySource.x, luckySource.y).setFloorNet(Blocks.stone);
+			world.tile(luckySource.x + 1, luckySource.y).setFloorNet(Blocks.stone);
+			world.tile(luckySource.x, luckySource.y + 1).setFloorNet(Blocks.stone);
+			world.tile(luckySource.x + 1, luckySource.y + 1).setFloorNet(Blocks.stone);
+		}
 	}
 
 	@Override
@@ -953,10 +946,13 @@ public class LuckyPlaceEvent extends ServerEvent {
 
 	@Override
 	public void generateWorld() {
+		if(!isGenerated){
 		isLuckActivated = false;
 		luckySource = null;
 		isOrePlaced = false;
 		Call.sendMessage(getInfo());
+		isGenerated = true;
+		}
 	}
 
 	@Override
