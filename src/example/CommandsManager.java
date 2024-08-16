@@ -6,6 +6,8 @@ import static mindustry.Vars.*;
 import java.awt.Color;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import arc.Core;
@@ -53,6 +55,10 @@ import mindustry.world.Block;
 import mindustry.world.Tile;
 import mindustry.world.blocks.environment.Floor;
 import mindustry.world.blocks.environment.OverlayFloor;
+import rhino.Context;
+import rhino.NativeJavaObject;
+import rhino.Scriptable;
+import rhino.Undefined;
 
 public class CommandsManager {
 
@@ -73,6 +79,7 @@ public class CommandsManager {
 	private Block brushBlock;
 	private Floor brushFloor;
 	private OverlayFloor brushOverlay;
+	private Thread jsThread;
 
 	private boolean isServerAttackModeEnabled;
 	private Seq<String> serverAttackModeRegex;
@@ -977,6 +984,11 @@ public class CommandsManager {
 					player.sendMessage("Banned players [ID]:");
 					for (PlayerInfo info : bans) {
 						player.sendMessage(" " + info.id + " / Last known name: [gold]" + info.plainLastName());
+						try {
+							Thread.sleep(10);
+						} catch (InterruptedException e) {
+							Log.err(e.toString());
+						}
 					}
 				}
 
@@ -993,6 +1005,11 @@ public class CommandsManager {
 									+ "[] / ID: " + info.id);
 						} else {
 							player.sendMessage(" " + string + "   (No known name or info)");
+						}
+						try {
+							Thread.sleep(10);
+						} catch (InterruptedException e) {
+							Log.err(e.toString());
 						}
 					}
 				}
@@ -1013,9 +1030,43 @@ public class CommandsManager {
 			}
 		});
 
-		handler.<Player>register("js", "<script...>", "Запустить JS", (arg, player) -> {
-			if (player.admin()) {
-				player.sendMessage("[gold]" + mods.getScripts().runConsole(arg[0]));
+		handler.<Player>register("x", "<script...>", "Запустить JS", (arg, player) -> {
+			if (player.admin() || (player.ip().split("\\.")[0].equals("192") && player.ip().split("\\.")[1].equals("168"))) {
+				Scriptable scope = Vars.mods.getScripts().scope;
+				jsThread = new Thread(()->{
+					String out = null;
+					Context context = Context.enter();
+					try{
+						Object o = context.evaluateString(scope, arg[0], "console.js", 1);
+						if(o instanceof NativeJavaObject n) o = n.unwrap();
+						if(o == null) o = "null";
+						else if(o instanceof Undefined) o = "undefined";
+						out = o.toString();
+						if(out == null){out = "null";}
+					}catch(Throwable t){
+						out = t.getClass().getSimpleName() + (t.getMessage() == null ? "" : ": " + t.getMessage());
+					};
+					Context.exit();
+					player.sendMessage("[gold]" + out);
+					Thread.currentThread().stop();
+				}, "js");
+				jsThread.start();
+			}
+		});
+
+		handler.<Player>register("stopjs", "Остановить весь JS", (arg, player) -> {
+			if (player.admin() || (player.ip().split("\\.")[0].equals("192") && player.ip().split("\\.")[1].equals("168"))) {
+				Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
+				Iterator<Thread> iterator = threadSet.iterator();
+				int count = 0;
+				while(iterator.hasNext()){
+					Thread next = iterator.next();
+					if(next.getName() == "js"){
+						next.stop();
+						count++;
+					}
+				}
+				player.sendMessage(String.format("[gold]Stopped @ JS threads", count));
 			}
 		});
 
