@@ -283,7 +283,7 @@ public class LuckyPlaceEvent extends ServerEvent {
 					int y = luckySource.y;
 
 					if(world.tile(x, y).block() == Blocks.lancer) {
-						Call.effect(Fx.dynamicSpikes, 
+						Call.effect(Fx.dynamicSpikes,
 								(float)(x*tilesize + tilesize/2f), (float)(y*tilesize + tilesize/2), 4f * 8f,
 								Color.HSVtoRGB((updates/60*10f)%360, 25, 100));
 					} else if(updates%60 == 0){

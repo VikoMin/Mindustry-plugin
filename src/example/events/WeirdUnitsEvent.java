@@ -1,7 +1,7 @@
 	package example.events;
 
 import arc.struct.Seq;
-import mindustry.core.ContentLoader;
+import mindustry.Vars;
 import mindustry.game.EventType.PlayerJoin;
 import mindustry.gen.Call;
 import mindustry.type.UnitType;
@@ -12,8 +12,7 @@ public class WeirdUnitsEvent extends ServerEvent {
 		color = "crimson";
 	}
 	
-	ContentLoader CT = new ContentLoader();
-	public Seq<UnitType> units = CT.units();
+	private Seq<UnitType> units = Vars.content.units();
 
     @Override
 	public void init() {
@@ -24,7 +23,6 @@ public class WeirdUnitsEvent extends ServerEvent {
 	public void announce() {
 		Call.announce("[crimson]Событие \"Странные юниты\" начнется на следующей карте!");
 		Call.sendMessage("[crimson]Событие \"Странные юниты\" начнется на следующей карте!");
-		Call.sendMessage("this event is not done yet");
 	}
 
 	@Override
@@ -40,7 +38,16 @@ public class WeirdUnitsEvent extends ServerEvent {
     @Override
 	public void generateWorld() {
 		Call.sendMessage("[crimson]Наземные юниты теперь летают, а летающие юниты теперь наземные!");
-		Call.sendMessage("this event is not done yet");
+		for(int i=0;i<units.size;i++){
+			units.get(i).flying=!units.get(i).flying;
+		}
+	}
+
+	@Override
+	public void fixworld() {
+		for(int i=0;i<units.size;i++){
+			units.get(i).flying=!units.get(i).flying;
+		}
 	}
     
 }

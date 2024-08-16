@@ -14,7 +14,10 @@ public class ServerEventsManager {
     spaceDanger(new SpaceDangerEvent()),
     livingWorld(new LivingWorldEvent()),
     luckyPlace(new LuckyPlaceEvent()),
-	weirdUnits(new WeirdUnitsEvent());
+	  weirdUnits(new WeirdUnitsEvent()),
+    totemOfBugs(new TotemOfBugs()),
+    //siege(new SiegeMode()),    removed because OSPx said
+  surge(new SurgePercent());
     
     ServerEvent event;
     
@@ -79,20 +82,25 @@ public class ServerEventsManager {
   }
   
   public void init() {
+    //
     Events.on(EventType.WorldLoadBeginEvent.class, e -> {
       for(int i = 0; i < getServerEventsCount(); i++){
         if (getServerEvent(i).isRunning()){
-          getServerEvent(i).isGenerated = false; 
+          getServerEvent(i).isGenerated = false;
         }
       }
           this.isLoaded = false;
           Vars.world.setGenerating(true);
           for (int i = 0; i < this.activeEvents.size(); i++)
-            ((ServerEvent)this.activeEvents.get(i)).isGenerated = false; 
+            ((ServerEvent)this.activeEvents.get(i)).isGenerated = false;
         });
+  //set world to generated
 	Events.on(EventType.WorldLoadEndEvent.class, e -> {
 		worldLoadEnd(e);
 	});
+
+    //next Events.on used in event (like lucky place)
+
     Events.on(EventType.BlockBuildEndEvent.class, e -> {
       if (this.isLoaded)
       for(int i = 0; i < getServerEventsCount(); i++){
@@ -139,7 +147,8 @@ public class ServerEventsManager {
       }
     });
   }
-  
+
+  //generate events in world
   public void worldLoadEnd(EventType.WorldLoadEndEvent e) {
 		for(int i = 0; i < getServerEventsCount(); i++){
 			if (getServerEvent(i).isRunning()){
@@ -150,7 +159,7 @@ public class ServerEventsManager {
     Vars.world.setGenerating(false);
     this.isLoaded = true;
   }
-  
+  //Callsed on every tick
   public void update() {
 	//Call.sendMessage(activeEvents.toString());
     if (this.isLoaded)
@@ -160,15 +169,8 @@ public class ServerEventsManager {
     }
 	}
   }
-  String y = "y";
-  String n = "n";
-  public String loaded(){
-	if(isLoaded){
-		return y;
-	} else {
-		return n;
-	}
-  }
+
+  //like Events.on but called by ExamplePlugin
 
   public void playerJoin(EventType.PlayerJoin e) {
 	for(int i = 0; i < getServerEventsCount(); i++){
@@ -179,17 +181,26 @@ public class ServerEventsManager {
 	}
   }
   
+  public void buildBegin(EventType.BlockBuildBeginEvent e){
+    if (this.isLoaded)
+      for(int i = 0; i < getServerEventsCount(); i++){
+        if (getServerEvent(i).isRunning()){
+          getServerEvent(i).blockBuildBegin(e);
+        }
+      }
+    }
+
   public void runEvent(String commandName) {
     ServerEvent event = getEventByCommandName(commandName);
     if (event == null) {
       Log.info("Event not found!");
       return;
-    } 
+    }
     Log.info(commandName + ": " + event.getName());
     if (this.activeEvents.contains(event)) {
       Log.info("Event already active!");
       return;
-    } 
+    }
     event.run();
     this.activeEvents.add(event);
   }
@@ -199,16 +210,18 @@ public class ServerEventsManager {
     if (event == null) {
       Log.info("Event not found!");
       return;
-    } 
-    if (this.activeEvents.contains(event)) {
+    }
+    if (event.isRunning()) {
       event.stop();
-      this.activeEvents.remove(event);
+      event.fixworld();
+      event.isGenerated = false;
     } else {
       Log.info("Event not active!");
       return;
-    } 
+    }
   }
-  
+
+  //this is not even working
   public void fastRunEvent(String commandName) {
     ServerEvent event = getEventByCommandName(commandName);
     if (event == null) {
@@ -229,11 +242,12 @@ public class ServerEventsManager {
   private ServerEvent getEventByCommandName(String commandName) {
     for (int i = 0; i < getServerEventsCount(); i++) {
       if (commandName.equals(getServerEvent(i).getCommandName()))
-        return getServerEvent(i); 
+        return getServerEvent(i);
     } 
     return null;
   }
   
+  //idk what is this
   public void trigger(Player player, String... args) {
 	for(int i = 0; i < getServerEventsCount(); i++){
 		if (getServerEvent(i).isRunning()){

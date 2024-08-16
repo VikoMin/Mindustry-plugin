@@ -60,6 +60,7 @@ public class NewYearEvent extends ServerEvent {
   public void init() {}
   
   public void update() {
+  if(isGenerated){
 	if(cold == null){cold = new byte[Vars.world.width()][Vars.world.height()];}
     Vars.content.createModContent();
     for (int i = 0; i < Groups.unit.size(); i++) {
@@ -152,6 +153,7 @@ public class NewYearEvent extends ServerEvent {
         } 
       } 
     } 
+  }
   }
   
   public void generateWorld() {

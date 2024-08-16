@@ -27,6 +27,10 @@ public abstract class ServerEvent {
   public void stop() {
     this.isRunning = false;
   }
+
+  public void fixworld() {
+
+  }
   
   public abstract void init();
   
@@ -57,6 +61,8 @@ public abstract class ServerEvent {
   }
   
   protected void blockBuildEnd(EventType.BlockBuildEndEvent e) {}
+
+  protected void blockBuildBegin(EventType.BlockBuildBeginEvent e) {}
   
   public void unitDestroy(EventType.UnitDestroyEvent e) {}
   

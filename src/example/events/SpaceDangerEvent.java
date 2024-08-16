@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import arc.graphics.Color;
 import arc.math.Mathf;
 import arc.math.geom.Vec2;
-import arc.util.Log;
 import example.GameWork;
 import mindustry.content.Blocks;
 import mindustry.content.Fx;
@@ -58,7 +57,6 @@ public class SpaceDangerEvent extends ServerEvent {
 
 	@Override
 	public void playerJoin(PlayerJoin e) {
-		Log.info(e.player);
 		if(e.player == null) return;
 		e.player.sendMessage(info);
 	}
@@ -299,7 +297,6 @@ public class SpaceDangerEvent extends ServerEvent {
 
 		private boolean isEnded = false;
 		private int fallTime = 90;
-		private int startFallTime = fallTime;
 		private long start = 0;
 
 		public Target(int x, int y) {
