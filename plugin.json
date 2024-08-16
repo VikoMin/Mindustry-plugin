@@ -1,7 +1,7 @@
 {
-  "name": "Agzam's plugin v1.9.0",
-  "author": "Agzam4",
+  "name": "Agzam's plugin v2",
+  "author": "Agzam4, [red]DOO[cyan]Mer_3D",
   "main": "example.ExamplePlugin",
-  "description": "New command, events, core protection from thorium reactors and more",
-  "version": 1.8
+  "description": "New command, events, core protection from thorium reactors and more (fork)",
+  "version": 2.0
 }
