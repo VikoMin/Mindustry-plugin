@@ -41,22 +41,19 @@ public class PlayerData {
 
     public long getBuilded(){
         return blocksBuilded;
-    };
+    }
     public long getDestroyed(){
         return blocksDestroyed;
-    };
+    }
     public int getWaves(){
         return wavesSurvived;
-    };
+    }
     public long getBanned(){
         return bannedUntil;
-    };
+    }
     public boolean getJs(){
         return js;
-    };
-    public boolean getUltra(){
-        return ultra;
-    };
+    }
     public String getUUID(){
         return UUID;
     }
@@ -101,14 +98,6 @@ public class PlayerData {
 
     public void ban(long millis){
         bannedUntil = millis;
-    }
-
-    public void js(String password){
-        if(password.equals("password here")) js = !js;
-    }
-
-    public void ultra(String password){
-        if(password.equals("password here")) ultra = !ultra;
     }
 
     public static void init(){
