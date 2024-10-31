@@ -241,9 +241,13 @@ public class ExamplePlugin extends Plugin {
             rhino.Context context = rhino.Context.enter();
             try {
                 Object o = context.evaluateString(scope, arg, "console.js", 1);
-                if (o instanceof NativeJavaObject n) o = n.unwrap();
-                if (o == null) o = "null";
-                else if (o instanceof Undefined) o = "undefined";
+                NativeJavaObject n = new NativeJavaObject();
+                if (o instanceof NativeJavaObject)
+                    o = n.unwrap();
+                if (o == null)
+                    o = "null";
+                else if (o instanceof Undefined)
+                    o = "undefined";
                 out = o.toString();
                 if (out == null) {
                     out = "null";

