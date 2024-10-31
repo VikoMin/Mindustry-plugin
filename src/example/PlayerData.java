@@ -58,7 +58,7 @@ public class PlayerData {
         return UUID;
     }
     public static PlayerData getData(String uuid){
-        Fi data = new Fi(new File("./config/data/" + uuid + ".json"));
+        Fi data = new Fi(new File("./config/data/" + uuid.replaceAll("/", "@") + ".json"));
         if(!data.exists()) return null;
         JsonReader parser = new JsonReader();
         JsonValue jsonData;
@@ -83,7 +83,7 @@ public class PlayerData {
     }
 
     public void save(){
-        Fi data = new Fi(new File("./config/data/" + this.UUID + ".json"));
+        Fi data = new Fi(new File("./config/data/" + this.UUID.replaceAll("/", "@") + ".json"));
         String write =
         "{\n" +
         "    \"builded\": " + Long.toString(blocksBuilded) + "\n" +
@@ -103,15 +103,23 @@ public class PlayerData {
     public static void init(){
         Fi dataDir = new Fi(new File("./config/data"));
         if(!dataDir.exists()) dataDir.mkdirs();
-        Events.on(PlayerJoin.class, e -> {
-            if(getData(e.player.uuid()) == null) new PlayerData(0, 0, 0, e.player.uuid()).save();
+                Events.on(PlayerJoin.class, e -> {
+            if(getData(e.player.uuid().replaceAll("/", "@")) == null) {
+                if(getData(e.player.uuid()) == null)
+                    new PlayerData(e.player.uuid().replaceAll("/", "@")).save();
+                else {
+                    PlayerData data = getData(e.player.uuid());
+                    data.UUID = e.player.uuid().replaceAll("/", "@");
+                    data.save();
+                    new Fi(new File("./config/data" + e.player.uuid().split("/")[0])).emptyDirectory(true);
+                }
+            }
             if(getData(e.player.uuid()).getBanned() > System.currentTimeMillis()){
                 Calendar calendar = Calendar.getInstance();
                 calendar.setTimeInMillis(getData(e.player.uuid()).getBanned());
-                String kick = "You are banned until " + calendar.get(Calendar.YEAR) + "." + (int)(calendar.get(Calendar.MONTH) + 1) + "." + calendar.get(Calendar.DAY_OF_MONTH) + " " + calendar.get(Calendar.AM) + ":" + calendar.get(Calendar.MINUTE);
-                e.player.kick(kick, 0);
-            }
-            else {
+                String kick = "You are banned until " + calendar.get(Calendar.YEAR) + "." + (int)(calendar.get(Calendar.MONTH) + 1) + "." + calendar.get(Calendar.DAY_OF_MONTH) + " " + calendar.get(Calendar.HOUR_OF_DAY) + ":" + calendar.get(Calendar.MINUTE) + " UTC";
+                e.player.kick(kick, 10);
+            } else {
                 PlayerData data = getData(e.player.uuid());
                 data.bannedUntil = 0;
                 data.save();
