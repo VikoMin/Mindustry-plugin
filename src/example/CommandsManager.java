@@ -73,8 +73,7 @@ public class CommandsManager {
         admin.name = "admin";
 
         adminCommands = new ArrayList<>();
-        adminCommands.add("fillitems");
-        adminCommands.add("admin");
+        adminCommands.add("fillitems");   
         adminCommands.add("chatfilter");
         adminCommands.add("dct");
         adminCommands.add("team");
@@ -151,44 +150,6 @@ public class CommandsManager {
     }
 
     public void registerAdminCommands(CommandHandler handler) {
-
-        handler.<Player>register("admin", "[add/remove] [name]", "Добавить/удалить админа", (arg, player) -> {
-            if (player.admin()) {
-                if (arg.length != 2 || !(arg[0].equals("add") || arg[0].equals("remove"))) {
-                    player.sendMessage("[red]Second parameter must be either 'add' or 'remove'.");
-                    return;
-                }
-
-                boolean add = arg[0].equals("add");
-
-                PlayerInfo target;
-                Player playert = Groups.player.find(p -> Strings.stripColors(p.name()).equalsIgnoreCase(Strings.stripColors(arg[1])));
-                if (playert != null) {
-                    target = playert.getInfo();
-                } else {
-                    target = netServer.admins.getInfoOptional(arg[1]);
-                    playert = Groups.player.find(p -> p.getInfo() == target);
-                }
-
-                if (playert.uuid() == player.uuid()) {
-                    player.sendMessage("[red] Вы не можете изменить свой статус");
-                    return;
-                }
-
-                if (target != null) {
-                    if (add) {
-                        netServer.admins.adminPlayer(target.id, playert == null ? target.adminUsid : playert.usid());
-                    } else {
-                        netServer.admins.unAdminPlayer(target.id);
-                    }
-                    if (playert != null) playert.admin = add;
-                    player.sendMessage("[gold]Изменен статус администратора игрока: [" + GameWork.colorToHex(playert.color) + "]" + Strings.stripColors(target.lastName));
-                } else {
-                    player.sendMessage("[red]Игрока с таким именем или ID найти не удалось. При добавлении администратора по имени убедитесь, что он подключен к Сети; в противном случае используйте его UUID");
-                }
-                netServer.admins.save();
-            }
-        });
 
         handler.<Player>register("fillitems", "[item] [count]", "Заполните ядро предметами", (arg, player) -> {
             if (player.admin()) {
