@@ -141,7 +141,16 @@ public class CommandsManager {
             }
             player.sendMessage(result.toString());
         });
-
+        
+        handler.<Player>register("spectate", "Watch the game", (args, player) -> {
+               if (player.team().equals(Team.derelict)){
+                   player.team(netServer.assigner.assign(player, Groups.player.copy(new Seq<>()).removeAll(e -> e.equals(player))));
+               } else {
+                   player.team(Team.derelict);
+                   player.unit().kill();
+               }
+        });
+        
         registerPlayersCommands(handler);
         registerAdminCommands(handler);
 
