@@ -21,6 +21,7 @@ public class PlayerData {
     private boolean js = false;
     private boolean ultra = false;
     private String UUID = "";
+    private boolean muted = false;
 
     public PlayerData(long builded, long destroyed, int waves, String uuid) {
         blocksBuilded = builded;
@@ -29,7 +30,7 @@ public class PlayerData {
         UUID = uuid;
     }
 
-    public PlayerData(long builded, long destroyed, int waves, long banned, boolean js, boolean ultra, String uuid) {
+    public PlayerData(long builded, long destroyed, int waves, long banned, boolean js, boolean ultra, String uuid, boolean muted) {
         blocksBuilded = builded;
         blocksDestroyed = destroyed;
         wavesSurvived = waves;
@@ -37,6 +38,7 @@ public class PlayerData {
         this.ultra = ultra;
         this.js = js;
         UUID = uuid;
+        this.muted = muted;
     }
 
 
@@ -54,6 +56,15 @@ public class PlayerData {
 
     public long getBanned() {
         return bannedUntil;
+    }
+
+    public boolean isMuted(){
+        return muted;
+    }
+
+    public PlayerData setMuted(boolean muted) {
+        this.muted = muted;
+        return this;
     }
 
     public boolean getJs() {
@@ -80,6 +91,7 @@ public class PlayerData {
         long banned = 0L;
         boolean js = false;
         boolean ultra = false;
+        boolean muted;
         try {
             builded = jsonData.get("builded").asLong();
             destroyed = jsonData.get("destroyed").asLong();
@@ -87,10 +99,11 @@ public class PlayerData {
             banned = jsonData.get("banned").asLong();
             js = jsonData.get("js").asBoolean();
             ultra = jsonData.get("ultra").asBoolean();
+            muted = jsonData.get("muted") != null && jsonData.get("muted").asBoolean();
         } catch (IllegalStateException e) {
             return null;
         }
-        return new PlayerData(builded, destroyed, waves, banned, js, ultra, uuid);
+        return new PlayerData(builded, destroyed, waves, banned, js, ultra, uuid, muted);
     }
 
     public void save() {
@@ -103,6 +116,7 @@ public class PlayerData {
                         "    \"banned\": " + Long.toString(bannedUntil) + "\n" +
                         "    \"js\": " + Boolean.toString(js) + "\n" +
                         "    \"ultra\": " + Boolean.toString(ultra) + "\n" +
+                        "    \"muted\": " + muted + "\n" +
                         "}";
         data.writeString(write, false);
     }
@@ -130,10 +144,13 @@ public class PlayerData {
                 calendar.setTimeInMillis(getData(e.player.uuid()).getBanned());
                 String kick = "You are banned until " + calendar.get(Calendar.YEAR) + "." + (int) (calendar.get(Calendar.MONTH) + 1) + "." + calendar.get(Calendar.DAY_OF_MONTH) + " " + calendar.get(Calendar.HOUR_OF_DAY) + ":" + calendar.get(Calendar.MINUTE) + " UTC";
                 e.player.kick(kick, 10);
-            } else {
+            }  else {
                 PlayerData data = getData(e.player.uuid());
                 data.bannedUntil = 0;
                 data.save();
+            }
+            if (getData(e.player.uuid()).muted && !Utils.isMuted(e.player.uuid())) {
+                Utils.mute(e.player.uuid());
             }
         });
         /*
