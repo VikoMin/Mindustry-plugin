@@ -1,7 +1,7 @@
 {
-  "name": "Agzam's plugin v2",
-  "author": "Agzam4, [red]DOO[cyan]Mer_3D",
+  "name": "FH plugin",
+  "author": "Agzam4, [red]DOO[cyan]Mer_3D, PoIarStar, afllict",
   "main": "example.ExamplePlugin",
-  "description": "New command, events, core protection from thorium reactors and more (fork)",
-  "version": 2.0
+  "description": "New command, events, core protection from thorium reactors and more (fork x2)",
+  "version": 1.0
 }

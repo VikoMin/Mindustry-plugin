@@ -30,7 +30,7 @@ import rhino.Undefined;
 
 public class ExamplePlugin extends Plugin {
 
-    public static final String PLUGIN_NAME = "agzams-plugin";
+    public static final String PLUGIN_NAME = "FH-plugin";
 
     public static DataCollecter dataCollect;
     public static CommandsManager commandsManager;
