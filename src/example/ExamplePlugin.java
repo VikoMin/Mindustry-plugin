@@ -13,7 +13,6 @@ import mindustry.entities.units.BuildPlan;
 import mindustry.game.EventType.BlockBuildBeginEvent;
 import mindustry.game.EventType.BuildSelectEvent;
 import mindustry.game.EventType.GameOverEvent;
-import mindustry.game.EventType.PlayerChatEvent;
 import mindustry.game.EventType.PlayerJoin;
 import mindustry.game.EventType.Trigger;
 import mindustry.game.EventType.WorldLoadEndEvent;
@@ -182,6 +181,7 @@ public class ExamplePlugin extends Plugin {
             }
         });
 
+        Utils.loadMute();
     }
 
     public PlayerData playerData(long builded, long breaked, int waves, String uuid) {

@@ -88,6 +88,10 @@ public class CommandsManager {
         adminCommands.add("link");
         adminCommands.add("setdiscord");
         adminCommands.add("pardon");
+        adminCommands.add("info-all");
+        adminCommands.add("mute");
+        adminCommands.add("unmute");
+        adminCommands.add("gameover");
 
         Events.on(PlayerJoin.class, e -> {
             if (e.player != null) checkPlayer(e.player);
@@ -156,6 +160,51 @@ public class CommandsManager {
 
     }
     public void registerAdminCommands(CommandHandler handler) {
+
+        handler.<Player>register("info-all", "<name...>", "info all", (args, player) -> {
+            if (!player.admin) return;
+            Utils.getFormattedData(args[0]).each(player::sendMessage);
+        });
+
+        handler.<Player>register("mute", "<data...>", "mute player", (args, player) -> {
+            if (!player.admin) return;
+           Player player1 = Utils.findPlayer(args[0]);
+           if (player1 == null) {
+               player.sendMessage("[#ff]Can`t find player: []" + args[0]);
+               return;
+           }
+           if (Utils.isMuted(player1.uuid())) {
+               player.sendMessage(player1.coloredName() + " [red]is already muted.");
+               return;
+           }
+            PlayerData.getData(player1.uuid()).setMuted(true).save();
+           Utils.mute(player1.uuid());
+           player.sendMessage("[lime]Muted player " + player1.coloredName());
+           player1.sendMessage("[#ff]You are muted!");
+
+        });
+
+        handler.<Player>register("unmute", "<data...>", "Unmute player", (args, player) -> {
+           if (!player.admin) return;
+           Player player1 = Utils.findPlayer(args[0]);
+           if (player1 == null) {
+               player.sendMessage("[#ff]Can`t find player: []" + args[0]);
+               return;
+           }
+           if (!Utils.isMuted(player1.uuid())) {
+               player.sendMessage(player1.coloredName() + " [red]is already unmuted.");
+               return;
+           }
+           Utils.unmute(player1.uuid());
+           PlayerData.getData(player1.uuid()).setMuted(false).save();
+           player1.sendMessage("[lime]You are unmuted!");
+           player.sendMessage("[lime]Unmuted player " + player1.coloredName());
+        });
+
+        handler.<Player>register("gameover", "Call gameover", (args, player) -> {
+            if (!player.admin) return;
+            Events.fire(new GameOverEvent(Team.derelict));
+        });
 
         handler.<Player>register("fillitems", "[item] [count]", "Заполните ядро предметами", (arg, player) -> {
             if (player.admin()) {
@@ -588,6 +637,7 @@ public class CommandsManager {
                         player.sendMessage("Last IP: [gold]" + info.lastIP);
                         player.sendMessage("Last name: [gold]" + info.plainLastName());
                         player.sendMessage("Banned: [gold]" + info.banned);
+                        player.sendMessage("Muted: [gold]" + data.isMuted());
                         return;
                     }
                 }
@@ -1006,7 +1056,7 @@ public class CommandsManager {
         void vote(Player player, int d) {
             votes += d;
             voted.addAll(player.uuid()); // FIXME: , Vars.netServer.admins.getInfo(player.uuid()).lastIP
-            Call.sendMessage(Strings.format("[" + GameWork.colorToHex(player.color) + "]@[lightgray] проголосовал " + (d > 0 ? "[green]за" : "[red]против") + "[] пропуска карты[accent] (@/@)\n[lightgray]Напишите[orange] /smvote <y/n>[], чтобы проголосовать [green]за[]/[red]против", player.name, votes, votesRequiredSkipmap));
+            Call.sendMessage(Strings.format("[" + GameWork.colorToHex(player.color) + "]@[lightgray] проголосовал " + (d > 0 ? "[green]за" : "[red]против") + "[] пропуска карты[accent] (@/@)\n[lightgray]Напишите[orange] /skipmap <y/n>[], чтобы проголосовать [green]за[]/[red]против", player.name, votes, votesRequiredSkipmap));
             checkPass();
         }
 
