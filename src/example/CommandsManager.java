@@ -88,7 +88,7 @@ public class CommandsManager {
         adminCommands.add("link");
         adminCommands.add("setdiscord");
         adminCommands.add("pardon");
-        adminCommands.add("infoAll");
+        adminCommands.add("info-all");
         adminCommands.add("mute");
         adminCommands.add("unmute");
         adminCommands.add("gameover");
