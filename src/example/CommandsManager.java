@@ -71,11 +71,9 @@ public class CommandsManager {
         admin.name = "admin";
 
         adminCommands = new ArrayList<>();
-        adminCommands.add("fillitems");
         adminCommands.add("dct");
         adminCommands.add("team");
         adminCommands.add("sandbox");
-        adminCommands.add("unit");
         adminCommands.add("vanish");
         adminCommands.add("remove");
         adminCommands.add("bans");
@@ -206,96 +204,6 @@ public class CommandsManager {
         handler.<Player>register("gameover", "Call gameover", (args, player) -> {
             if (!player.admin) return;
             Events.fire(new GameOverEvent(Team.derelict));
-        });
-
-        handler.<Player>register("fillitems", "[item] [count]", "Заполните ядро предметами", (arg, player) -> {
-            if (player.admin()) {
-                try {
-                    final Item[] serpuloItems = {Items.scrap, Items.copper, Items.lead, Items.graphite, Items.coal, Items.titanium, Items.thorium, Items.silicon, Items.plastanium, Items.phaseFabric, Items.surgeAlloy, Items.sporePod, Items.sand, Items.blastCompound, Items.pyratite, Items.metaglass};
-
-                    final Item[] erekirOnlyItems = {Items.beryllium, Items.tungsten, Items.oxide, Items.carbide, Items.fissileMatter, Items.dormantCyst};
-
-                    if (arg.length == 0) {
-                        StringBuilder ruNames = new StringBuilder("Русские названия предметов: ");
-                        for (int i = 0; i < serpuloItems.length; i++) {
-                            ruNames.append(GameWork.getColoredLocalizedItemName(serpuloItems[i]));
-                            ruNames.append(", ");
-                        }
-                        for (int i = 0; i < erekirOnlyItems.length; i++) {
-                            ruNames.append(GameWork.getColoredLocalizedItemName(erekirOnlyItems[i]));
-                            if (i + 1 < erekirOnlyItems.length) {
-                                ruNames.append(", ");
-                            }
-                        }
-                        player.sendMessage(ruNames.toString());
-                        return;
-                    }
-
-                    Item item = null;
-                    String itemname = arg[0].toLowerCase();
-
-                    for (int i = 0; i < serpuloItems.length; i++) {
-                        Item si = serpuloItems[i];
-                        if (itemname.equalsIgnoreCase(si.name) || itemname.equalsIgnoreCase(si.localizedName)) {
-                            item = si;
-                            break;
-                        }
-                    }
-                    if (item == null) {
-                        for (int i = 0; i < erekirOnlyItems.length; i++) {
-                            Item ei = erekirOnlyItems[i];
-                            if (itemname.equalsIgnoreCase(ei.name) || itemname.equalsIgnoreCase(ei.localizedName)) {
-                                item = ei;
-                                break;
-                            }
-                        }
-                    }
-                    if (item == null) {
-                        item = switch (itemname) {
-                            case "\uf82a" -> Items.blastCompound;
-                            case "\uf833" -> Items.coal;
-                            case "\uf838" -> Items.copper;
-                            case "\uf835" -> Items.graphite;
-                            case "\uf837" -> Items.lead;
-                            case "\uf836" -> Items.metaglass;
-                            case "\uf82d" -> Items.phaseFabric;
-                            case "\uf82e" -> Items.plastanium;
-                            case "\uf829" -> Items.pyratite;
-                            case "\uf834" -> Items.sand;
-                            case "\uf830" -> Items.scrap;
-                            case "\uf82f" -> Items.silicon;
-                            case "\uf82b" -> Items.sporePod;
-                            case "\uf82c" -> Items.surgeAlloy;
-                            case "\uf831" -> Items.thorium;
-                            case "\uf832" -> Items.titanium;
-                            default -> item;
-                        };
-                    }               if (item == null) {
-                        if (itemname.equalsIgnoreCase(Items.dormantCyst.name) || itemname.equalsIgnoreCase(Items.dormantCyst.localizedName)) {
-                            item = Items.dormantCyst;
-                        }
-                        if (itemname.equalsIgnoreCase(Items.fissileMatter.name) || itemname.equalsIgnoreCase(Items.fissileMatter.localizedName)) {
-                            item = Items.fissileMatter;
-                        }
-                    }
-                    if (item != null) {
-                        Team team = player.team();
-
-                        int count = arg.length > 1 ? Integer.parseInt(arg[1]) : 0;
-
-                        if (team.cores().size == 0) {
-                            player.sendMessage("[red]У Вашей команды игроков нет ядер");
-                            return;
-                        }
-                        team.cores().get(0).items.add(item, count);
-                        player.sendMessage("Добавлено " + "[gold]x" + count + " [orange]" + item.name);
-                    } else {
-                        player.sendMessage("Предмет не найден");
-                    }
-                } catch (Exception e) {
-                    player.sendMessage(e.getMessage());
-                }
-            }
         });
 
         handler.<Player>register("dct", "[time]", "Установить интервал (секунд/10) обновлений данных", (arg, player) -> {
@@ -449,58 +357,6 @@ public class CommandsManager {
                 }
             } else {
                 player.sendMessage("[red]Команда только для администраторов");
-            }
-        });
-
-        handler.<Player>register("unit", "[type] [inPlayer]", "Создает юнита, list для списка", (arg, player) -> {
-            if (player.admin()) {
-                String unitType = UnitTypes.gamma.name;
-                Field[] fields = UnitTypes.class.getFields();
-
-                if (arg.length > 0) {
-                    if (arg[0].equals("list")) {
-                        StringBuilder unitTypes = new StringBuilder("Типы юнитов");
-                        for (int i = 0; i < fields.length; i++) {
-                            String name = fields[i].getName();
-                            if (name.equals(UnitTypes.block.name)) continue;
-
-                            unitTypes.append(fields[i].getName());
-                            if (i + 1 != fields.length) {
-                                unitTypes.append(", ");
-                            }
-                        }
-                        player.sendMessage(unitTypes.toString());
-                        return;
-                    }
-                    unitType = arg[0];
-                }
-                try {
-                    for (int i = 0; i < fields.length; i++) {
-                        if (fields[i].getName().equals(unitType)) {
-                            UnitType ut = (UnitType) fields[i].get(UnitTypes.class);
-                            if (ut == null) continue;
-                            if (ut.name.equals(UnitTypes.block.name)) {
-                                continue;
-                            }
-                            Unit u = ut.spawn(player.team(), player.mouseX, player.mouseY);
-                            if (arg.length > 1) {
-                                if (arg[1].equals("true") || arg[1].equals("y") || arg[1].equals("t") || arg[1].equals("yes")) {
-                                    player.unit(u);
-                                }
-                            }
-                            player.sendMessage("Готово!");
-
-                            if (!net.client()) {
-                                u.add();
-                            }
-                            return;
-                        }
-                    }
-                    player.sendMessage("[red]Юнит не найден [gold]/unit list");
-                } catch (IllegalArgumentException | IllegalAccessException e) {
-                    e.printStackTrace();
-                    player.sendMessage(e.getLocalizedMessage());
-                }
             }
         });
 
