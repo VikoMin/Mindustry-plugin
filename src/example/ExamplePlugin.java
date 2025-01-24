@@ -4,6 +4,7 @@ import static example.Emoji.*;
 import static mindustry.Vars.*;
 
 import arc.Events;
+import arc.math.Mathf;
 import arc.util.CommandHandler;
 import arc.util.Log;
 import mindustry.Vars;
@@ -11,7 +12,6 @@ import mindustry.content.Blocks;
 import mindustry.content.Liquids;
 import mindustry.entities.units.BuildPlan;
 import mindustry.game.EventType.BlockBuildBeginEvent;
-import mindustry.game.EventType.BuildSelectEvent;
 import mindustry.game.EventType.GameOverEvent;
 import mindustry.game.EventType.PlayerJoin;
 import mindustry.game.EventType.Trigger;
@@ -23,6 +23,7 @@ import mindustry.gen.Player;
 import mindustry.gen.Unit;
 import mindustry.maps.Maps;
 import mindustry.mod.Plugin;
+import mindustry.net.Administration;
 import mindustry.world.blocks.storage.CoreBlock.CoreBuild;
 import rhino.NativeJavaObject;
 import rhino.Scriptable;
@@ -57,6 +58,19 @@ public class ExamplePlugin extends Plugin {
             dataCollect.update();
         });
 
+        //thorium reactor defence
+        netServer.admins.addActionFilter(action -> {
+            if (!action.type.equals(Administration.ActionType.placeBlock)) return true;
+            if (action.player == null || action.player.core() == null || !(action.block == Blocks.thoriumReactor)) return true;
+            for (CoreBuild core : action.player.team().cores()) {
+                if (Mathf.dst(core.tile.x, core.tile.y, action.tile.x, action.tile.y) <= 20) {
+                    action.player.sendMessage("[#ff]Вы не можете строить ториевые реакторы рядом с ядром!");
+                    return false;
+                }
+            }
+            return true;
+        });
+
         // score and new record on game over
         Events.on(GameOverEvent.class, e -> {
             StringBuilder result = new StringBuilder(state.map.name());
@@ -83,37 +97,6 @@ public class ExamplePlugin extends Plugin {
             }*/
         });
 
-        //thorium reactor defence
-        Events.on(BuildSelectEvent.class, event -> {
-            Unit builder = event.builder;
-            if (builder == null)
-                return;
-            BuildPlan buildPlan = builder.buildPlan();
-            if (buildPlan == null)
-                return;
-
-            if (!event.breaking && builder.buildPlan().block == Blocks.thoriumReactor && builder.isPlayer()) {
-                Player player = builder.getPlayer();
-                Team team = player.team();
-
-                float thoriumReactorX = event.tile.getX();
-                float thoriumReactorY = event.tile.getY();
-
-                for (CoreBuild core : team.cores()) {
-                    int hypot = (int) Math
-                            .ceil(Math.hypot(thoriumReactorX - core.getX(), thoriumReactorY - core.getY()) / 10);
-                    if (hypot <= 15) {
-                        builder.clearBuilding();
-                        try {
-                            builder.buildPlan().tile().setAir();
-                        } catch (NullPointerException e) {
-                            Vars.world.tile((int) (thoriumReactorX / Vars.tilesize), (int) (thoriumReactorY / Vars.tilesize)).setAir();
-                        }
-                        return;
-                    }
-                }
-            }
-        });
 
         /**
          * Info message about builder, that building thorium Reactor

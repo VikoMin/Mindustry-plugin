@@ -147,11 +147,13 @@ public class CommandsManager {
         });
         
         handler.<Player>register("spectate", "Watch the game", (args, player) -> {
-               if (player.team().equals(Team.derelict)){
+               if (player.team().equals(Team.neoplastic)){
                    player.team(netServer.assigner.assign(player, Groups.player.copy(new Seq<>()).removeAll(e -> e.equals(player))));
+                   player.sendMessage("[#ff]You are now playing.");
                } else {
-                   player.team(Team.derelict);
-                   player.unit().kill();
+                   player.clearUnit();
+                   player.team(Team.neoplastic);
+                   player.sendMessage("[#ff]You are now spectating the game.");
                }
         });
         
