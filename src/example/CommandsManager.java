@@ -750,9 +750,9 @@ public class CommandsManager {
             player.sendMessage(worldInfo.toString());
         });
 
-        handler.<Player>register("skipmap", "[y/n]", "Начать голосование за пропуск карты", (arg, player) -> {
+       /* handler.<Player>register("skipmap", "[y/n]", "Начать голосование за пропуск карты", (arg, player) -> {
             if (currentlyMapSkipping != null && arg.length == 0)
-                player.sendMessage("[scarlet]Голосование уже идет. Чтобы проголосовать, используйте [gold]/skipmap <y/n>");
+                player.sendMessage("[scarlet]Голосование уже идет. Чтобы проголосовать, используйте [gold]/skipmap <y/n>"); 
 
             else if (currentlyMapSkipping == null && arg.length > 0)
                 player.sendMessage("[scarlet]Голосование ещё не идет. Для пропуска карты используйте [gold]/skipmap");
@@ -778,7 +778,7 @@ public class CommandsManager {
 
                 currentlyMapSkipping.vote(player, sign);
             }
-        });
+        }); */
 
         handler.<Player>register("skipwave", "<count>", "Начать голосование за пропуск волн", (arg, player) -> {
             if (currentlyWaveSkipping == null) {
